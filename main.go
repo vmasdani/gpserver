@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -54,6 +55,13 @@ func main() {
 
 	// Bind to a port and pass our router in
 	fmt.Println("Listening on http://localhost:" + serverPort)
-	log.Fatal(http.ListenAndServe(":"+serverPort, handlers.CompressHandler(r)))
+	log.Fatal(http.ListenAndServe(":"+serverPort, handlers.CompressHandler(cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedHeaders: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+
+		// Enable Debugging for testing, consider disabling in production
+		Debug: true,
+	}).Handler(r))))
 
 }
