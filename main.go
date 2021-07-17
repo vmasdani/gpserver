@@ -45,13 +45,25 @@ func main() {
 	db.AutoMigrate(&ListedFile{})
 	db.AutoMigrate(&Category{})
 	db.AutoMigrate(&Tag{})
+	db.AutoMigrate(&ListedFileTag{})
 
 	r := mux.NewRouter()
 	// Routes consist of a path and a handler function.
 	r.HandleFunc("/listed-check", ListedCheckHandler(db))
 	r.HandleFunc("/listed-test-insert", ListedTestInsert(db))
-
 	r.HandleFunc("/listedfiles", ListedFiles(db))
+	r.HandleFunc("/listedfiles-paged", ListedFilesPaged(db))
+	r.HandleFunc("/listedfiles-save", SaveListedFiles(db)).Methods("POST")
+
+	// Categories
+	r.HandleFunc("/categories", Categories(db))
+	r.HandleFunc("/categories-save-batch", CategoriesSaveBatch(db))
+
+	// Tags
+	r.HandleFunc("/tags", Tags(db))
+	r.HandleFunc("/tags-save-batch", TagsSaveBatch(db))
+
+	r.HandleFunc("/refresh-thumbnail", RefreshThumbnail(db))
 
 	// Bind to a port and pass our router in
 	fmt.Println("Listening on http://localhost:" + serverPort)

@@ -7,10 +7,10 @@ import (
 )
 
 type GormModel struct {
-	ID        uint `gorm:"primaryKey"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"`
 }
 
 type ListedFile struct {
@@ -27,4 +27,11 @@ type Category struct {
 type Tag struct {
 	GormModel
 	Name string `json:"name"`
+	// ListedFileID uint   `json:"listedFileId"`
+}
+
+type ListedFileTag struct {
+	GormModel
+	TagID        uint `json:"tagId"`
+	ListedFileID uint `json:"listedFileId"`
 }
