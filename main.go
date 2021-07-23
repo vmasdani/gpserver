@@ -65,6 +65,9 @@ func main() {
 
 	r.HandleFunc("/refresh-thumbnail", RefreshThumbnail(db))
 
+	// Media
+	r.HandleFunc("/media/{id}", Media(db))
+
 	// Bind to a port and pass our router in
 	fmt.Println("Listening on http://localhost:" + serverPort)
 	log.Fatal(http.ListenAndServe(":"+serverPort, handlers.CompressHandler(cors.New(cors.Options{

@@ -7,17 +7,19 @@ import { Category, PagedInfo } from "./model";
 const UserPage = () => {
   const ctx = useContext(AppContext);
 
-  const [searchBy, setSearchBy] = useState<"category" | "tags">("category");
   const [content, setContent] = useState<PagedInfo | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  const [page, setPage] = useState(1);
-
+  // Filter & controls
+  const [filter, setFilter] = useState({
+    searchBy: "category" as "category" | "tags",
+    mediaType: "video" as "video" | "image",
+    page: 1,
+  });
   useEffect(() => {
     fetchAdditionalData();
-
     fetchData();
-  }, [page]);
+  }, [filter]);
 
   const fetchAdditionalData = async () => {
     const [categories] = await Promise.all([
@@ -30,10 +32,40 @@ const UserPage = () => {
     setCategories(categories);
   };
 
+  const PageControl = () => {
+    return (
+      <div className="d-flex">
+        <div>
+          Showing page {filter.page} of {content?.last}
+        </div>
+        <div className="mx-1">
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={() => {
+              setFilter({ ...filter, page: filter.page - 1 });
+            }}
+          >
+            Prev
+          </button>
+        </div>
+        <div className="mx-1">
+          <button
+            onClick={() => {
+              setFilter({ ...filter, page: filter.page + 1 });
+            }}
+            className="btn btn-sm btn-primary"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const fetchData = async () => {
     try {
       const resp = await fetch(
-        `${ctx?.baseUrl}/listedfiles-paged?page=${page}&type=video`,
+        `${ctx?.baseUrl}/listedfiles-paged?page=${filter.page}&type=${filter.mediaType}`,
         {
           headers: { authorization: ctx?.apiKey ?? "" },
         }
@@ -65,21 +97,48 @@ const UserPage = () => {
           <div
             className="mx-2 form-check form-switch"
             onClick={() => {
-              if (searchBy === "category") {
-                setSearchBy("tags");
-              } else if (searchBy === "tags") {
-                setSearchBy("category");
+              if (filter.searchBy === "category") {
+                setFilter({ ...filter, searchBy: "tags", page: 1 });
+              } else if (filter.searchBy === "tags") {
+                setFilter({ ...filter, searchBy: "category", page: 1 });
               }
             }}
           >
             <input
-              checked={searchBy === "tags"}
+              checked={filter.searchBy === "tags"}
               className="form-check-input"
               type="checkbox"
               id="flexSwitchCheckDefault"
             />
           </div>
           <div>Tags</div>
+        </div>
+      </div>
+
+      <div className="d-flex align-items-center">
+        <div>
+          <strong>Video/Image</strong>
+        </div>
+        <div className="d-flex mx-3">
+          <div>Video</div>
+          <div
+            className="mx-2 form-check form-switch"
+            onClick={() => {
+              if (filter.mediaType === "image") {
+                setFilter({ ...filter, mediaType: "video", page: 1 });
+              } else if (filter.mediaType === "video") {
+                setFilter({ ...filter, mediaType: "image", page: 1 });
+              }
+            }}
+          >
+            <input
+              checked={filter.mediaType === "image"}
+              className="form-check-input"
+              type="checkbox"
+              id="flexSwitchCheckDefault"
+            />
+          </div>
+          <div>Image</div>
         </div>
       </div>
 
@@ -107,58 +166,47 @@ const UserPage = () => {
 
       {content ? (
         <>
-          <div className="d-flex">
-            <div>
-              Showing page {page} of {content.last}
-            </div>
-            <div className="mx-1">
-              <button
-                className="btn btn-sm btn-primary"
-                onClick={() => {
-                  setPage(page - 1);
-                }}
-              >
-                Prev
-              </button>
-            </div>
-            <div className="mx-1">
-              <button
-                onClick={() => {
-                  setPage(page + 1);
-                }}
-                className="btn btn-sm btn-primary"
-              >
-                Next
-              </button>
-            </div>
-          </div>
+          <PageControl />
 
           <div className="d-flex flex-wrap my-3">
             {content.content?.map((file) => {
               return (
-                <div
-                  className="d-flex justify-content-center align-items-center flex-column m-2 border border-dark rounded p-1 shadow bg-light"
-                  style={{ width: 300 }}
+                <a
+                  href={`${ctx?.baseUrl}/media/${file.listedFile?.id}`}
+                  target="_blank"
+                  style={{ textDecoration: "none", color: "black" }}
                 >
-                  <div className="d-flex justify-content-center text-center">
-                    {file.previewBase64 && file.previewBase64 !== "====" ? (
-                      <img
-                        src={`data:image/png;base64, ${file.previewBase64}`}
-                      />
-                    ) : (
-                      <strong>No preview</strong>
-                    )}
+                  <div
+                    className="d-flex justify-content-center align-items-center flex-column m-2 border border-dark rounded p-1 shadow bg-light"
+                    style={{ width: 300, cursor: "pointer" }}
+                  >
+                    <div className="d-flex justify-content-center text-center">
+                      {file.previewBase64 && file.previewBase64 !== "====" ? (
+                        <img
+                          style={{ maxWidth: 250 }}
+                          src={`data:image/png;base64, ${file.previewBase64}`}
+                        />
+                      ) : (
+                        <strong>No preview</strong>
+                      )}
+                    </div>
+                    <div style={{ width: 250, wordWrap: "break-word" }}>
+                      {file.listedFile?.name}  
+                      {/* (
+                      {((file.size ?? 0) / 1024 / 1024).toFixed(2)} MB) */}
+                    </div>
+                    <div className={`bg-dark text-white px-2 rounded`}>
+                      {categories.find(
+                        (c) => c.id === file.listedFile?.categoryId
+                      )?.name ?? "No category"}
+                    </div>
                   </div>
-                  <div style={{width: 250, wordWrap: "break-word"}}>{file.listedFile?.name}</div>
-                  <div className={`bg-dark text-white px-2 rounded`}>
-                    {categories.find(
-                      (c) => c.id === file.listedFile?.categoryId
-                    )?.name ?? "No category"}
-                  </div>
-                </div>
+                </a>
               );
             })}
           </div>
+
+          <PageControl />
         </>
       ) : (
         <></>

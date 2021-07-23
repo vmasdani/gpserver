@@ -20,7 +20,7 @@ const AdminPage = () => {
   >("dashboard");
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [requestStatus, setRequestStatus] = useState<RequestStatus>("NotAsked")
+  const [requestStatus, setRequestStatus] = useState<RequestStatus>("NotAsked");
 
   useEffect(() => {
     fetchData();
@@ -212,7 +212,21 @@ const AdminPage = () => {
                           return (
                             <tr>
                               <td>{i + 1}</td>
-                              <td>{file.path}</td>
+                              <td>
+                                {file.listedFile && file.listedFile.id !== 0 ? (
+                                  <>
+                                    <a
+                                      href={`${ctx?.baseUrl}/media/${file.listedFile.id}`}
+                                      target="_blank"
+                                      style={{ textDecoration: "none" }}
+                                    >
+                                      {file.path}
+                                    </a>
+                                  </>
+                                ) : (
+                                  <>{file.path}</>
+                                )}
+                              </td>
                               <td>
                                 {((file.size ?? 0) / 1024 / 1024).toFixed(2)} MB
                               </td>

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -16,6 +18,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 )
 
@@ -322,6 +325,57 @@ func ListedTestInsert(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) 
 		w.Header().Set("content-type", "application/json")
 
 		db.Save(&ListedFile{Name: "sample-mp4-file.mp4"})
+	}
+}
+
+func Media(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Find DB first
+
+		fmt.Println(r.URL)
+		fmt.Println(mux.Vars(r)["id"])
+
+		// Read id to int
+		idInt, err := strconv.Atoi(mux.Vars(r)["id"])
+
+		if err != nil {
+			fmt.Println("Error parsing ID " + mux.Vars(r)["id"])
+		}
+
+		var listedFile ListedFile
+		if db.Debug().Where("id = ?", idInt).First(&listedFile).Error != nil {
+
+			fmt.Println("[ID] " + mux.Vars(r)["id"] + " not found")
+
+		} else {
+			// Differentiate type video and image
+
+			// Check if pic or video
+			if strings.Contains(listedFile.Name, ".mp4") ||
+				strings.Contains(listedFile.Name, ".mkv") ||
+				strings.Contains(listedFile.Name, ".webm") ||
+				strings.Contains(listedFile.Name, ".3gp") ||
+				strings.Contains(listedFile.Name, ".gif ") {
+				w.Header().Set("content-type", "video/webm")
+			} else if strings.Contains(listedFile.Name, ".png") ||
+				strings.Contains(listedFile.Name, ".jpeg") ||
+				strings.Contains(listedFile.Name, ".jpg") {
+				w.Header().Set("content-type", "image/jpeg")
+			}
+
+			homeDir := os.Getenv("HOME_DIR")
+
+			fmt.Println("[PATH]" + homeDir + listedFile.Name)
+
+			fileBytes, err := ioutil.ReadFile(homeDir + listedFile.Name)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			io.Copy(w, bytes.NewReader(fileBytes))
+
+		}
+
 	}
 }
 
